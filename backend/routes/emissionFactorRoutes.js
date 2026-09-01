@@ -6,6 +6,8 @@ const {
     getAllEmissionFactors
 } = require("../controllers/emissionFactorController");
 
-router.get("/", getAllEmissionFactors);
+const authMiddleware = require("../middleware/authMiddleware");
+
+router.get("/", authMiddleware, getAllEmissionFactors);
 
 module.exports = router;

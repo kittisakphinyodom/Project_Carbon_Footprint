@@ -7,10 +7,12 @@ const {
     getMaterialById
 } = require("../controllers/materialController");
 
+const authMiddleware = require("../middleware/authMiddleware");
+
 // GET /api/materials
-router.get("/", getMaterials);
+router.get("/", authMiddleware, getMaterials);
 
 // GET /api/materials/:id
-router.get("/:id", getMaterialById);
+router.get("/:id", authMiddleware,  getMaterialById);
 
 module.exports = router;

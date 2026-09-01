@@ -62,7 +62,6 @@ function Materials() {
 
       return (
         String(material.id).includes(keyword) ||
-        material.code?.toLowerCase().includes(keyword) ||
         material.name?.toLowerCase().includes(keyword)
       );
     })
@@ -243,14 +242,14 @@ function Materials() {
                 <div className="relative">
 
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                    🔍
+                    
                   </span>
 
                   <input
                     type="text"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="ค้นหา ID, Code หรือชื่อวัตถุดิบ..."
+                    placeholder="ค้นหา ID หรือชื่อวัตถุดิบ..."
                     className="w-full rounded-lg border border-slate-300 py-2.5 pl-11 pr-4 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
                   />
 
@@ -316,9 +315,7 @@ function Materials() {
                       ID
                     </th>
 
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">
-                      Code
-                    </th>
+                    
 
                     <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600">
                       Material
@@ -355,14 +352,7 @@ function Materials() {
                           {material.id}
                         </td>
 
-                        {/* Code */}
-                        <td className="px-6 py-4">
-
-                          <span className="rounded-md bg-slate-100 px-3 py-1 font-mono text-sm font-semibold text-slate-700">
-                            {material.code}
-                          </span>
-
-                        </td>
+                        
 
                         {/* Material */}
                         <td className="px-6 py-4">
@@ -420,7 +410,7 @@ function Materials() {
 
                     <tr>
                       <td
-                        colSpan="6"
+                        colSpan="5"
                         className="px-6 py-12 text-center text-slate-400"
                       >
                         ไม่พบข้อมูลวัตถุดิบ

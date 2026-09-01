@@ -9,21 +9,46 @@ const {
     deleteActivity,
     updateActivity
 } = require("../controllers/activityController");
-
+const authMiddleware = require("../middleware/authMiddleware");
+const roleMiddleware = require("../middleware/roleMiddleware");
 // POST /api/activities
-router.post("/", createActivity);
+router.post(
+    "/",
+    authMiddleware,
+    roleMiddleware("ADMIN", "STAFF"),
+    createActivity
+);
 
 // GET /api/activities
-router.get("/", getActivities);
+router.get(
+    "/",
+    authMiddleware,
+    getActivities
+);
 
 // GET /api/activities/:id
-router.get("/:id", getActivityById);
+router.get(
+    "/:id",
+    authMiddleware,
+    getActivityById
+);
+
+
 
 // PUT /api/activities/:id
-router.put("/:id", updateActivity);
+router.put(
+    "/:id",
+    authMiddleware,
+    roleMiddleware("ADMIN", "STAFF"),
+    updateActivity
+);
 
 // DELETE /api/activities/:id
-router.delete("/:id", deleteActivity);
+router.delete(
+        "/:id",
+        authMiddleware,
+        roleMiddleware("ADMIN"),
+        deleteActivity);
 
 
 module.exports = router;

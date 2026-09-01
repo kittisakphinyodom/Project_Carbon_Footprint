@@ -5,7 +5,7 @@ import {
   getMaterials,
   createActivity,
   getScopes,
-  getActivityTypesByCategory,
+  getActivityTypes,
 } from "../services/api";
 
 import Sidebar from "../components/Sidebar";
@@ -23,8 +23,7 @@ function Activities() {
 
   const [selectedScopeId, setSelectedScopeId] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
-  const [selectedActivityTypeId, setSelectedActivityTypeId] =
-    useState("");
+  const [selectedActivityTypeId, setSelectedActivityTypeId] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -32,9 +31,13 @@ function Activities() {
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const [activityName, setActivityName] = useState("");
+
   const [formData, setFormData] = useState({
+    name: "",
     material_id: "",
     quantity: "",
+    description: "",
   });
 
   // ==========================================
@@ -71,6 +74,7 @@ function Activities() {
       const result = await getMaterials();
 
       if (result.success) {
+        console.log("MATERIALS:", result.data);
         setMaterials(result.data || []);
       }
     } catch (err) {
@@ -100,6 +104,36 @@ function Activities() {
     }
   };
 
+  const fetchActivityTypes = async () => {
+  try {
+
+    const result = await getActivityTypes();
+
+    console.log(
+      "Activity Types:",
+      result
+    );
+
+    if (result.success) {
+      setActivityTypes(
+        result.data || []
+      );
+    }
+
+  } catch (err) {
+
+    console.error(
+      "Load activity types error:",
+      err
+    );
+
+    setError(
+      "ไม่สามารถโหลด Activity Type ได้"
+    );
+
+  }
+};
+
   // ==========================================
   // Initial Load
   // ==========================================
@@ -108,37 +142,52 @@ function Activities() {
     fetchActivities();
     fetchMaterials();
     fetchScopes();
+    fetchActivityTypes();
   }, []);
 
   // ==========================================
   // Selected Scope
   // ==========================================
-
-  const selectedScope = scopes.find(
-    (scope) =>
-      String(scope.id) === String(selectedScopeId)
-  );
   
-
   // ==========================================
-  // Selected Material
-  // ==========================================
+// Selected Activity Type
+// ==========================================
 
-  const selectedMaterial = materials.find(
-    (material) =>
-      String(material.id) ===
-      String(formData.material_id)
-  );
+const selectedActivityType = activityTypes.find(
+  (activityType) =>
+    String(activityType.id) ===
+    String(selectedActivityTypeId)
+);
 
-  // ==========================================
-  // Selected Activity Type
-  // ==========================================
 
-  const selectedActivityType = activityTypes.find(
-    (activityType) =>
-      String(activityType.id) ===
-      String(selectedActivityTypeId)
-  );
+// ==========================================
+// Selected Scope
+// ==========================================
+
+const selectedScope = scopes.find((scope) =>
+  scope.categories?.some(
+    (category) =>
+      String(category.id) ===
+      String(selectedActivityType?.category_id)
+  )
+);
+
+
+// ==========================================
+// Selected Material
+// ==========================================
+
+const selectedMaterial = materials.find(
+  (material) =>
+    String(material.id) ===
+    String(formData.material_id)
+);
+
+// ปัจจุบัน Database มี Material สำหรับ Scope 3 เท่านั้น
+const availableMaterials =
+  String(selectedScopeId) === "3"
+    ? materials
+    : [];
 
   // ==========================================
   // Calculate Carbon Preview
@@ -158,101 +207,139 @@ function Activities() {
   // ==========================================
 
   const handleScopeChange = (e) => {
-    const scopeId = e.target.value;
+  const scopeId = e.target.value;
 
-    setSelectedScopeId(scopeId);
+  setSelectedScopeId(scopeId);
 
-    // Reset Category
-    setSelectedCategoryId("");
+  setFormData((prev) => ({
+    ...prev,
+    material_id: "",
+  }));
 
-    // Reset Activity Type
-    setSelectedActivityTypeId("");
-    setActivityTypes([]);
+  setError("");
+};
 
-    setError("");
-  };
-
-  // ==========================================
-  // Category Change
-  // ==========================================
-
-  const handleCategoryChange = async (e) => {
-    const categoryId = e.target.value;
-
-    setSelectedCategoryId(categoryId);
-
-    // Reset Activity Type
-    setSelectedActivityTypeId("");
-    setActivityTypes([]);
-
-    setError("");
-
-    if (!categoryId) {
-      return;
-    }
-
-    try {
-      const result =
-        await getActivityTypesByCategory(categoryId);
-
-      console.log(
-        "Activity Types:",
-        result
-      );
-
-      if (result.success) {
-        setActivityTypes(
-          result.data || []
-        );
-      } else {
-        setError(
-          "ไม่สามารถโหลด Activity Type ได้"
-        );
-      }
-    } catch (err) {
-      console.error(
-        "Load activity types error:",
-        err
-      );
-
-      setError(
-        "ไม่สามารถโหลด Activity Type ได้"
-      );
-    }
-  };
+  
+  
 
   // ==========================================
   // Activity Type Change
   // ==========================================
 
-  const handleActivityTypeChange = (e) => {
-    setSelectedActivityTypeId(
-      e.target.value
+ const handleActivityTypeChange = (e) => {
+  const activityTypeId = e.target.value;
+
+  // -------------------------------
+  // Reset
+  // -------------------------------
+
+  setSelectedActivityTypeId(activityTypeId);
+  setSelectedScopeId("");
+  setSelectedCategoryId("");
+
+  setFormData((prev) => ({
+    ...prev,
+    material_id: "",
+  }));
+
+  setError("");
+
+  // -------------------------------
+  // ถ้ายังไม่ได้เลือก
+  // -------------------------------
+
+  if (!activityTypeId) {
+    return;
+  }
+
+  // -------------------------------
+  // หา Activity Type
+  // -------------------------------
+
+  const activityType = activityTypes.find(
+    (item) =>
+      String(item.id) === String(activityTypeId)
+  );
+
+  if (!activityType) {
+    return;
+  }
+
+  // -------------------------------
+  // Activity Type → Category
+  // -------------------------------
+
+  const categoryId = activityType.category_id;
+
+  setSelectedCategoryId(categoryId);
+
+  // -------------------------------
+  // Category → Scope
+  // -------------------------------
+
+  const scope = scopes.find((item) =>
+    item.categories?.some(
+      (category) =>
+        String(category.id) ===
+        String(categoryId)
+    )
+  );
+
+  // -------------------------------
+  // พบ Scope
+  // -------------------------------
+
+  if (scope) {
+
+    setSelectedScopeId(scope.id);
+
+    console.log(
+      "Activity Type:",
+      activityType.name
     );
 
-    setError("");
-  };
+    console.log(
+      "Category ID:",
+      categoryId
+    );
+
+    console.log(
+      "Auto Scope:",
+      scope.code
+    );
+
+  } else {
+
+    console.error(
+      "ไม่พบ Scope สำหรับ Category:",
+      categoryId
+    );
+
+    setError(
+      "ไม่พบ Scope ที่สัมพันธ์กับ Activity Type นี้"
+    );
+  }
+};
 
   // ==========================================
   // Open Modal
   // ==========================================
 
-  const handleOpenModal = () => {
-    setFormData({
-      material_id: "",
-      quantity: "",
-    });
+const handleOpenModal = () => {
+  setFormData({
+    activity_name: "",
+    material_id: "",
+    quantity: "",
+    description: "",
+  });
 
-    setSelectedScopeId("");
-    setSelectedCategoryId("");
-    setSelectedActivityTypeId("");
+  setSelectedScopeId("");
+  setSelectedCategoryId("");
+  setSelectedActivityTypeId("");
 
-    setActivityTypes([]);
-
-    setError("");
-
-    setShowModal(true);
-  };
+  setError("");
+  setShowModal(true)
+};
 
   // ==========================================
   // Close Modal
@@ -291,40 +378,38 @@ function Activities() {
     // Validation
     // -------------------------------
 
-    if (!selectedScopeId) {
-      setError("กรุณาเลือก Scope");
-      return;
-    }
+    if (!formData.name.trim()) {
+  setError("กรุณาระบุชื่อกิจกรรม");
+  return;
+}
 
-    if (!selectedCategoryId) {
-      setError("กรุณาเลือก Category");
-      return;
-    }
+if (!selectedActivityTypeId) {
+  setError("กรุณาเลือก Activity Type");
+  return;
+}
 
-    if (!selectedActivityTypeId) {
-      setError("กรุณาเลือก Activity Type");
-      return;
-    }
+if (!selectedScopeId) {
+  setError("กรุณาเลือก Scope");
+  return;
+}
 
-    if (!formData.material_id) {
-      setError("กรุณาเลือก Material");
-      return;
-    }
+if (!formData.material_id) {
+  setError("กรุณาเลือก Material");
+  return;
+}
 
-    if (
-      !formData.quantity ||
-      Number(formData.quantity) <= 0
-    ) {
-      setError(
-        "กรุณาระบุ Quantity ให้ถูกต้อง"
-      );
-      return;
-    }
+if (
+  !formData.quantity ||
+  Number(formData.quantity) <= 0
+) {
+  setError("กรุณาระบุ Quantity ให้ถูกต้อง");
+  return;
+}
 
-    if (!selectedMaterial) {
-      setError("ไม่พบข้อมูล Material");
-      return;
-    }
+if (!selectedMaterial) {
+  setError("ไม่พบข้อมูล Material");
+  return;
+}
 
     // -------------------------------
     // Create Activity
@@ -335,13 +420,13 @@ function Activities() {
       setError("");
 
       const activityData = {
-        user_id: 1,
+        name: formData.name.trim(),
 
         scope_id:
           Number(selectedScopeId),
 
         category_id:
-          Number(selectedCategoryId),
+          Number(selectedActivityType.category_id),
 
         activity_type_id:
           Number(selectedActivityTypeId),
@@ -360,9 +445,12 @@ function Activities() {
         unit:
           selectedMaterial.default_unit,
 
+        description:
+          formData.description.trim(),
+
         data_source: "OTHER",
 
-        status: "DRAFT",
+        
       };
 
       console.log(
@@ -386,9 +474,11 @@ function Activities() {
 
         // Reset Form
         setFormData({
+          name: "",
           material_id: "",
           quantity: "",
-        });
+          description: "",
+      });
 
         setSelectedScopeId("");
         setSelectedCategoryId("");
@@ -418,6 +508,38 @@ function Activities() {
       setSaving(false);
     }
   };
+
+  // ==========================================
+// Scope Color
+// ==========================================
+
+const getScopeStyle = (scopeCode) => {
+  switch (scopeCode) {
+    case "SCOPE_1":
+      return {
+        badge: "bg-sky-50 text-sky-700 border-sky-200",
+        dot: "bg-sky-500",
+      };
+
+    case "SCOPE_2":
+      return {
+        badge: "bg-green-50 text-green-700 border-green-200",
+        dot: "bg-green-500",
+      };
+
+    case "SCOPE_3":
+      return {
+        badge: "bg-orange-50 text-orange-700 border-orange-200",
+        dot: "bg-orange-500",
+      };
+
+    default:
+      return {
+        badge: "bg-slate-50 text-slate-600 border-slate-200",
+        dot: "bg-slate-400",
+      };
+  }
+};
 
   // ==========================================
   // Render
@@ -587,10 +709,22 @@ function Activities() {
 
                               <td className="px-6 py-4">
 
-                                <span className="rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-600">
-                                  {activity.scope?.code ||
-                                    `Scope ${activity.scope_id}`}
-                                </span>
+                                {(() => {
+                                      const scopeStyle = getScopeStyle(activity.scope?.code);
+
+                                    return (
+                                      <span
+                                        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm font-medium ${scopeStyle.badge}`}
+                                      >
+                                        <span
+                                          className={`h-2 w-2 rounded-full ${scopeStyle.dot}`}
+                                        />
+
+                                        {activity.scope?.code ||
+                                          `Scope ${activity.scope_id}`}
+                                      </span>
+                                    );
+                                  })()}
 
                               </td>
 
@@ -752,353 +886,228 @@ function Activities() {
             {/* Form */}
 
             <form
-              onSubmit={handleSubmit}
-              className="space-y-5 p-6"
-            >
+  onSubmit={handleSubmit}
+  className="space-y-5 p-6"
+>
+
+  {/* Error */}
+
+  {error && (
+    <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">
+      {error}
+    </div>
+  )}
 
-              {/* ==================================
-                  Modal Error
-              ================================== */}
+  {/* Activity Name */}
 
-              {error && (
+  <div>
+    <label className="mb-2 block text-sm font-medium text-slate-700">
+      ชื่อกิจกรรม
+    </label>
 
-                <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">
-                  {error}
-                </div>
-
-              )}
-
-              {/* ==================================
-                  Scope
-              ================================== */}
-
-              <div>
-
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Scope
-                </label>
-
-                <select
-                  value={selectedScopeId}
-                  onChange={handleScopeChange}
-                  className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
-                >
-
-                  <option value="">
-                    -- เลือก Scope --
-                  </option>
-
-                  {scopes.map(
-                    (scope) => (
-
-                      <option
-                        key={scope.id}
-                        value={scope.id}
-                      >
-                        {scope.code} - {scope.name}
-                      </option>
-
-                    )
-                  )}
-
-                </select>
-
-              </div>
-
-              {/* ==================================
-                  Category
-              ================================== */}
-
-              <div>
-
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Category
-                </label>
-
-                <select
-                  value={selectedCategoryId}
-                  onChange={handleCategoryChange}
-                  disabled={!selectedScope}
-                  className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100 disabled:bg-slate-100 disabled:text-slate-400"
-                >
-
-                  <option value="">
-                    {!selectedScope
-                      ? "-- เลือก Scope ก่อน --"
-                      : "-- เลือก Category --"}
-                  </option>
-
-                  {selectedScope?.categories?.map(
-                    (category) => (
-
-                      <option
-                        key={category.id}
-                        value={category.id}
-                      >
-                        {category.code} - {category.name}
-                      </option>
-
-                    )
-                  )}
-
-                </select>
-
-              </div>
-
-              {/* ==================================
-                  Activity Type
-              ================================== */}
-
-              <div>
-
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Activity Type
-                </label>
-
-                <select
-                  value={selectedActivityTypeId}
-                  onChange={
-                    handleActivityTypeChange
-                  }
-                  disabled={!selectedCategoryId}
-                  className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100 disabled:bg-slate-100 disabled:text-slate-400"
-                >
-
-                  <option value="">
-                    {!selectedCategoryId
-                      ? "-- เลือก Category ก่อน --"
-                      : activityTypes.length === 0
-                      ? "-- ไม่พบ Activity Type --"
-                      : "-- เลือก Activity Type --"}
-                  </option>
-
-                  {activityTypes.map(
-                    (activityType) => (
-
-                      <option
-                        key={activityType.id}
-                        value={activityType.id}
-                      >
-                        {activityType.code
-                          ? `${activityType.code} - ${activityType.name}`
-                          : activityType.name}
-                      </option>
-
-                    )
-                  )}
-
-                </select>
-
-              </div>
-
-              {/* ==================================
-                  Selected Activity Information
-              ================================== */}
-
-              {selectedActivityType && (
-
-                <div className="rounded-lg bg-blue-50 p-4">
-
-                  <p className="text-xs text-blue-500">
-                    Selected Activity Type
-                  </p>
-
-                  <p className="mt-1 font-medium text-blue-700">
-                    {selectedActivityType.name}
-                  </p>
-
-                  {selectedActivityType.description && (
-
-                    <p className="mt-1 text-xs text-blue-600">
-                      {selectedActivityType.description}
-                    </p>
-
-                  )}
-
-                </div>
-
-              )}
-
-              {/* ==================================
-                  Material
-              ================================== */}
-
-              <div>
-
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Material
-                </label>
-
-            <select
-                name="material_id"
-                value={formData.material_id}
-                onChange={handleChange}
-                disabled={
-                    !selectedScopeId ||
-                    !selectedCategoryId ||
-                    !selectedActivityTypeId
-                }
-                className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none
-                    focus:border-green-500 focus:ring-2 focus:ring-green-100
-                    disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-                >
-                <option value="">
-                    {!selectedScopeId ||
-                    !selectedCategoryId ||
-                    !selectedActivityTypeId
-                    ? "-- กรุณาเลือก Scope, Category และ Activity Type ก่อน --"
-                    : "-- เลือก Material --"}
-                </option>
-
-                {materials.map((material) => (
-                    <option
-                    key={material.id}
-                    value={material.id}
-                    >
-                    {material.name} ({material.code})
-                    </option>
-                ))}
-            </select>
-
-              </div>
-
-              {/* ==================================
-                  Material Information
-              ================================== */}
-
-              {selectedMaterial && (
-
-                <div className="rounded-lg bg-slate-50 p-4">
-
-                  <div className="grid grid-cols-2 gap-4">
-
-                    {/* Unit */}
-
-                    <div>
-
-                      <p className="text-xs text-slate-400">
-                        Unit
-                      </p>
-
-                      <p className="font-medium text-slate-700">
-                        {selectedMaterial.default_unit}
-                      </p>
-
-                    </div>
-
-                    {/* Emission Factor */}
-
-                    <div>
-
-                      <p className="text-xs text-slate-400">
-                        Emission Factor
-                      </p>
-
-                      <p className="font-medium text-green-600">
-                        {emissionFactor}{" "}
-                        kgCO₂e/
-                        {selectedMaterial.default_unit}
-                      </p>
-
-                    </div>
-
-                  </div>
-
-                </div>
-
-              )}
-
-              {/* ==================================
-                  Quantity
-              ================================== */}
-
-              <div>
-
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Quantity
-                </label>
-
-                <div className="flex">
-
-                  <input
-                    type="number"
-                    name="quantity"
-                    value={formData.quantity}
-                    onChange={handleChange}
-                    min="0"
-                    step="0.01"
-                    placeholder="เช่น 150"
-                    className="w-full rounded-l-lg border border-slate-300 px-4 py-3 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
-                  />
-
-                  <div className="flex items-center rounded-r-lg border border-l-0 border-slate-300 bg-slate-50 px-4 text-slate-500">
-                    {selectedMaterial?.default_unit ||
-                      "unit"}
-                  </div>
-
-                </div>
-
-              </div>
-
-              {/* ==================================
-                  Carbon Preview
-              ================================== */}
-
-              {selectedMaterial &&
-                formData.quantity &&
-                Number(formData.quantity) > 0 && (
-
-                  <div className="rounded-xl bg-green-50 p-5">
-
-                    <p className="text-sm text-green-700">
-                      Estimated Carbon Footprint
-                    </p>
-
-                    <p className="mt-1 text-3xl font-bold text-green-600">
-                      {carbon.toFixed(2)}
-                    </p>
-
-                    <p className="text-sm text-green-600">
-                      kgCO₂e
-                    </p>
-
-                    <p className="mt-2 text-xs text-green-700">
-                      {quantity} ×{" "}
-                      {emissionFactor}
-                    </p>
-
-                  </div>
-
-                )}
-
-              {/* ==================================
-                  Buttons
-              ================================== */}
-
-              <div className="flex justify-end gap-3 border-t pt-5">
-
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  disabled={saving}
-                  className="rounded-lg border border-slate-300 px-5 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="rounded-lg bg-green-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {saving
-                    ? "Saving..."
-                    : "Save Activity"}
-                </button>
-
-              </div>
-
-            </form>
+    <input
+      type="text"
+      name="name"
+      value={formData.name}
+      onChange={handleChange}
+      placeholder="ระบุชื่อกิจกรรม"
+      className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+    />
+  </div>
+
+  {/* Activity Type */}
+
+  <div>
+    <label className="mb-2 block text-sm font-medium text-slate-700">
+      Activity Type
+    </label>
+
+    <select
+  value={selectedActivityTypeId}
+  onChange={handleActivityTypeChange}
+  className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+>
+  <option value="">
+    -- เลือก Activity Type --
+  </option>
+
+  {activityTypes.map((activityType) => (
+    <option
+      key={activityType.id}
+      value={activityType.id}
+    >
+      {activityType.name}
+    </option>
+  ))}
+</select>
+  </div>
+
+  {/* Scope */}
+
+  <div>
+
+  <label className="mb-2 block text-sm font-medium text-slate-700">
+    Scope
+  </label>
+
+  <div className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+
+    {selectedScope ? (
+
+  (() => {
+    const scopeStyle = getScopeStyle(selectedScope.code);
+
+    return (
+      <div
+        className={`rounded-lg border p-3 ${scopeStyle.badge}`}
+      >
+
+        <div className="flex items-center gap-2">
+
+          <span
+            className={`h-3 w-3 rounded-full ${scopeStyle.dot}`}
+          />
+
+          <p className="font-bold">
+            {selectedScope.code}
+          </p>
+
+        </div>
+
+        <p className="mt-1 text-sm opacity-80">
+          {selectedScope.name}
+        </p>
+
+      </div>
+    );
+  })()
+
+) : (
+
+  <p className="text-slate-400">
+    เลือก Activity Type ก่อน
+  </p>
+
+)}
+
+  </div>
+
+</div>
+
+  {/* Material */}
+
+  <div>
+    <label className="mb-2 block text-sm font-medium text-slate-700">
+      Material
+    </label>
+
+    <select
+  name="material_id"
+  value={formData.material_id}
+  onChange={handleChange}
+  disabled={
+    !selectedScopeId ||
+    availableMaterials.length === 0
+  }
+  className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none
+    focus:border-green-500 focus:ring-2 focus:ring-green-100
+    disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+>
+  
+      <option value="">
+  {!selectedScopeId
+    ? "-- กรุณาเลือก Activity Type ก่อน --"
+    : availableMaterials.length === 0
+      ? "-- ยังไม่มี Material สำหรับ Scope นี้ --"
+      : "-- เลือก Material --"}
+</option>
+
+      {availableMaterials.map((material) => (
+        <option
+          key={material.id}
+          value={material.id}
+        >
+          {material.name}
+        </option>
+      ))}
+    </select>
+  </div>
+
+  {/* Quantity */}
+
+  <div>
+    <label className="mb-2 block text-sm font-medium text-slate-700">
+      Quantity
+    </label>
+
+    <div className="flex">
+
+      <input
+        type="number"
+        name="quantity"
+        value={formData.quantity}
+        onChange={handleChange}
+        min="0"
+        step="0.01"
+        placeholder="เช่น 100"
+        className="w-full rounded-l-lg border border-slate-300 px-4 py-3 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
+      />
+
+      <div className="flex min-w-[70px] items-center justify-center rounded-r-lg border border-l-0 border-slate-300 bg-slate-50 px-4 text-slate-500">
+        {selectedMaterial?.default_unit || "unit"}
+      </div>
+
+    </div>
+  </div>
+
+  {/* Divider */}
+
+  <div className="border-t border-slate-200 pt-5">
+
+    <p className="text-sm font-medium text-slate-700">
+      Carbon Footprint
+    </p>
+
+    <div className="mt-3 text-center">
+
+      <p className="text-4xl font-bold text-green-600">
+        {carbon.toFixed(2)}
+      </p>
+
+      <p className="mt-1 text-sm text-slate-500">
+        kgCO₂e
+      </p>
+
+    </div>
+
+  </div>
+
+  {/* Buttons */}
+
+  <div className="flex justify-end gap-3 border-t pt-5">
+
+    <button
+      type="button"
+      onClick={handleCloseModal}
+      disabled={saving}
+      className="rounded-lg border border-slate-300 px-5 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+    >
+      Cancel
+    </button>
+
+    <button
+      type="submit"
+      disabled={saving}
+      className="rounded-lg bg-green-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      {saving
+        ? "Saving..."
+        : "Save Activity"}
+    </button>
+
+  </div>
+
+</form>
 
           </div>
 

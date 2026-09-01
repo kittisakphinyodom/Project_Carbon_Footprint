@@ -7,10 +7,12 @@ const {
     getScopeById
 } = require("../controllers/scopeController");
 
+const authMiddleware = require("../middleware/authMiddleware");
+
 // GET /api/scopes
-router.get("/", getAllScopes);
+router.get("/", authMiddleware, getAllScopes);
 
 // GET /api/scopes/:id
-router.get("/:id", getScopeById);
+router.get("/:id", authMiddleware, getScopeById);
 
 module.exports = router;

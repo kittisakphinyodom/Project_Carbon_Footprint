@@ -15,9 +15,8 @@ const getAllScopes = async (req, res) => {
                     attributes: [
                         "id",
                         "code",
-                        "name",
-                        "description",
-                        "status"
+                        "name"
+                        
                     ],
                     where: {
                         status: "ACTIVE"

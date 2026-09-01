@@ -17,7 +17,7 @@ const {
 const createActivity = async (req, res) => {
     try {
         const {
-    user_id,
+    name,
     scope_id,
     category_id,
     activity_type_id,
@@ -29,17 +29,18 @@ const createActivity = async (req, res) => {
     description,
     data_source
 } = req.body;
+const user_id = req.user.id;
 
         // ========================================
         // Validate required fields
         // ========================================
 
-        if (!user_id) {
+        if (!name || !name.trim()) {
             return res.status(400).json({
                 success: false,
-                message: "กรุณาระบุ user_id"
-            });
-        }
+                message: "กรุณาระบุชื่อกิจกรรม"
+        });
+}
 
         if (!scope_id) {
             return res.status(400).json({
@@ -159,6 +160,7 @@ const createActivity = async (req, res) => {
 
         const activity = await Activity.create({
             user_id,
+            name: name.trim(),
             scope_id,
             category_id,
             activity_type_id,
@@ -355,6 +357,7 @@ const getActivities = async (req, res) => {
 };
 
 
+
 // ========================================
 // GET /api/activities/:id
 // Get activity by ID
@@ -541,7 +544,7 @@ const updateActivity = async (req, res) => {
         const { id } = req.params;
 
         const {
-            user_id,
+            
             scope_id,
             category_id,
             activity_type_id,
@@ -552,8 +555,8 @@ const updateActivity = async (req, res) => {
             unit,
             description,
             data_source
-        } = req.body;
-
+        } = req.body || {};
+        const user_id = req.user.id;
 
         // ========================================
         // Find Activity
@@ -579,14 +582,7 @@ const updateActivity = async (req, res) => {
         // Validate Required Fields
         // ========================================
 
-        if (!user_id) {
-            await transaction.rollback();
-
-            return res.status(400).json({
-                success: false,
-                message: "กรุณาระบุ user_id"
-            });
-        }
+       
 
         if (!scope_id) {
             await transaction.rollback();

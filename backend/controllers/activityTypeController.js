@@ -1,6 +1,7 @@
 const {
     ActivityType,
-    ScopeCategory
+    ScopeCategory,
+    Scope
 } = require("../models");
 
 // ========================================
@@ -18,15 +19,40 @@ const getAllActivityTypes = async (req, res) => {
                 status: "ACTIVE"
             },
 
-            include: [
+            attributes: [
+                        "id",
+                "category_id",
+                "code",
+                "name",
+                "default_unit",
+                "description",
+                "status",
+                "calculation_method"
+                    ],
+         include: [
                 {
                     model: ScopeCategory,
                     as: "category",
+
                     attributes: [
                         "id",
                         "scope_id",
                         "code",
                         "name"
+                    ],
+
+                    include: [
+                        {
+                            model: Scope,
+                            as: "scope",
+
+                            attributes: [
+                                "id",
+                                "code",
+                                "name",
+                                "description"
+                            ]
+                        }
                     ]
                 }
             ],

@@ -18,6 +18,7 @@ const carbonCalculationRoutes = require("./routes/carbonCalculationRoutes");
 const activityRoutes = require("./routes/activityRoutes");
 const materialRoutes = require("./routes/materialRoutes");
 const activityTypeRoutes = require("./routes/activityTypeRoutes");
+const authRoutes = require("./routes/authRoutes");
 const app = express();
 
 // Middleware
@@ -59,6 +60,10 @@ app.use(
 app.use(
     "/api/activity-types",
     activityTypeRoutes
+);
+
+app.use("/api/auth", 
+    authRoutes
 );
 
 // Test API

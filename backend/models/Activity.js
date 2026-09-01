@@ -9,6 +9,11 @@ const Activity = sequelize.define(
             primaryKey: true,
             autoIncrement: true
         },
+        
+        name: {
+            type: DataTypes.STRING(255),
+            allowNull: false
+        },  
 
         user_id: {
             type: DataTypes.INTEGER.UNSIGNED,

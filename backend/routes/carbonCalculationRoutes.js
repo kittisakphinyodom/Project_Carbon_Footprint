@@ -7,10 +7,12 @@ const {
     getSummary
 } = require("../controllers/carbonCalculationController");
 
+const authMiddleware = require("../middleware/authMiddleware");
+
 // POST /api/carbon-calculations
-router.post("/", calculate);
+router.post("/", authMiddleware, calculate);
 
 // GET /api/carbon-calculations/summary
-router.get("/summary", getSummary);
+router.get("/summary", authMiddleware, getSummary);
 
 module.exports = router;

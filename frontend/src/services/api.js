@@ -40,18 +40,52 @@ export const createActivity = async (activityData) => {
   const response = await api.post("/activities", activityData);
   return response.data;
 };
-export const getActivityTypesByCategory = async (categoryId) => {
-  const response = await api.get(
-    `/activity-types/category/${categoryId}`
-  );
 
-  return response.data;
+export const getActivityTypes = async () => {
+  try {
+
+    const response = await api.get(
+      "/activity-types"
+    );
+
+    return response.data;
+
+  } catch (error) {
+
+    console.error(
+      "Get activity types error:",
+      error
+    );
+
+    throw error;
+
+  }
 };
+
 export const getScopes = async () => {
     const response = await api.get("/scopes");
     return response.data;
 };
 
+api.interceptors.request.use((config) => {
+
+    const token = localStorage.getItem("token");
+
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
+});
+// Login
+export const login = (data) => api.post("/auth/login", data);
+
+export const register = (data) => api.post("/auth/register", data);
+
+export const googleLogin = (credential) =>
+    api.post("/auth/google", {
+        credential
+    });
 
 
 export default api;
