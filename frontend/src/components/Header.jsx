@@ -1,47 +1,49 @@
-import { useNavigate } from "react-router-dom";
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from './LanguageSwitcher'; // 👈 นำเข้า LanguageSwitcher
 
-function Header() {
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-
-    navigate("/", { replace: true });
-  };
+const Header = ({ user, onLogout }) => {
+  const { t } = useTranslation();
 
   return (
-    <header className="h-20 border-b bg-white flex items-center justify-between px-8">
+    <header className="flex justify-between items-center px-8 py-3 bg-white border-b border-gray-100 shadow-sm">
+      {/* ฝั่งซ้าย: ข้อความ Overview */}
       <div>
-        <h2 className="text-2xl font-bold text-slate-800">
-          {/* Dashboard */}
-        </h2>
-
-        <p className="text-sm text-slate-500">
+        <span className="text-sm text-gray-500 font-normal">
           Hotel Carbon Footprint Overview
-        </p>
+        </span>
       </div>
 
-      <div className="flex items-center gap-6">
-        <div className="text-right">
-          <p className="text-sm font-medium text-slate-700">
-            Carbon Footprint System
-          </p>
+      {/* ฝั่งขวา: กล่องแสดง Profile + ปุ่ม Logout */}
+      <div className="flex items-center space-x-4">
+        
+        {/* กล่องจัดข้อความชิดขวาแบบแนวตั้ง (flex-col) */}
+        <div className="flex flex-col items-end">
+          {/* 1. Email */}
+          <span className="text-sm font-semibold text-gray-700">
+            {user?.email || 'kittisak@gmail.com'}
+          </span>
 
-          <p className="text-xs text-slate-400">
-            Activity Based Calculation
-          </p>
+          {/* 2. Role: STAFF */}
+          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
+            {user?.role || 'STAFF'}
+          </span>
+
+          {/* 3. 👈 ปุ่มเปลี่ยนภาษา (อยู่ใต้ STAFF) */}
+          {/* <LanguageSwitcher /> */}
         </div>
 
+        {/* ปุ่ม Logout */}
         <button
-          onClick={handleLogout}
-          className="px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition"
+          onClick={onLogout}
+          className="bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors shadow-sm"
         >
           Logout
         </button>
+
       </div>
     </header>
   );
-}
+};
 
 export default Header;
