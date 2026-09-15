@@ -16,6 +16,7 @@ const {
 
 const createActivity = async (req, res) => {
     try {
+        console.log("📦 Payload from React:", req.body);
         const {
     name,
     scope_id,
@@ -248,112 +249,81 @@ const user_id = req.user.id;
 // Get all activities
 // ========================================
 
-const getActivities = async (req, res) => {
+// ========================================
+// GET /api/activities
+// Get all activities (Filtered by user_id)
+// ========================================
 
+const getActivities = async (req, res) => {
     try {
+        // ดึง user_id จาก token ที่ middleware แนบมาให้
+        const user_id = req.user.id;
 
         const activities = await Activity.findAll({
-
+            // เพิ่มเงื่อนไขให้ดึงเฉพาะข้อมูลที่ user_id ตรงกับคนที่ล็อกอิน
+            where: {
+                user_id: user_id
+            },
             include: [
-    {
-        model: Material,
-        as: "material",
-        attributes: [
-            "id",
-            "code",
-            "name",
-            "default_unit"
-        ]
-    },
-
-    {
-        model: Scope,
-        as: "scope",
-        attributes: [
-            "id",
-            "code",
-            "name"
-        ]
-    },
-
-    {
-        model: ScopeCategory,
-        as: "category",
-        attributes: [
-            "id",
-            "code",
-            "name"
-        ]
-    },
-
-    {
-        model: ActivityType,
-        as: "activityType",
-        attributes: [
-            "id",
-            "category_id",
-            "code",
-            "name",
-            "default_unit",
-            "calculation_method"
-        ]
-    },
-
-    {
-        model: CarbonCalculation,
-        as: "calculations",
-        attributes: [
-            "id",
-            "emission_factor_id",
-            "quantity",
-            "factor_value",
-            "co2_result",
-            "ch4_result",
-            "n2o_result",
-            "total_co2e",
-            "calculation_type",
-            "calculation_method",
-            "calculated_at"
-        ]
-    }
-],
-
+                {
+                    model: Material,
+                    as: "material",
+                    attributes: ["id", "code", "name", "default_unit"]
+                },
+                {
+                    model: Scope,
+                    as: "scope",
+                    attributes: ["id", "code", "name"]
+                },
+                {
+                    model: ScopeCategory,
+                    as: "category",
+                    attributes: ["id", "code", "name"]
+                },
+                {
+                    model: ActivityType,
+                    as: "activityType",
+                    attributes: ["id", "category_id", "code", "name", "default_unit", "calculation_method"]
+                },
+                {
+                    model: CarbonCalculation,
+                    as: "calculations",
+                    attributes: [
+                        "id",
+                        "emission_factor_id",
+                        "quantity",
+                        "factor_value",
+                        "co2_result",
+                        "ch4_result",
+                        "n2o_result",
+                        "total_co2e",
+                        "calculation_type",
+                        "calculation_method",
+                        "calculated_at"
+                    ]
+                }
+            ],
             order: [
                 ["activity_date", "DESC"],
                 ["id", "DESC"]
             ]
-
         });
 
         return res.status(200).json({
-
             success: true,
-
             count: activities.length,
-
             data: activities
-
         });
 
     } catch (error) {
-
-        console.error(
-            "Get activities error:",
-            error
-        );
+        console.error("Get activities error:", error);
 
         return res.status(500).json({
-
             success: false,
-
             message: "ไม่สามารถดึงข้อมูล Activity ได้",
-
             error: error.message
-
         });
-
     }
-
 };
 
 
@@ -436,103 +406,55 @@ const getActivityById = async (req, res) => {
 };
 
 const deleteActivity = async (req, res) => {
-
     const transaction = await sequelize.transaction();
-
     try {
-
         const { id } = req.params;
+        const userRole = req.user.role?.name || req.user.role; // เช็คบทบาทผู้ใช้งาน
 
-        // ========================================
-        // Find Activity
-        // ========================================
-
-        const activity = await Activity.findByPk(id, {
-            transaction
-        });
-
-        if (!activity) {
-
+        // 🛑 เช็คสิทธิ์: หากไม่ใช่ ADMIN ห้ามลบ
+        if (String(userRole).toUpperCase() !== 'ADMIN') {
             await transaction.rollback();
-
-            return res.status(404).json({
+            return res.status(403).json({
                 success: false,
-                message: "ไม่พบ Activity ที่ต้องการลบ"
+                message: "คุณไม่มีสิทธิ์ลบกิจกรรมนี้ (เฉพาะ Admin เท่านั้น)"
             });
-
         }
 
-        // ========================================
-        // Delete Carbon Calculations
-        // ========================================
-
-        const deletedCalculations =
-            await CarbonCalculation.destroy({
-                where: {
-                    activity_id: id
-                },
-                transaction
+        // ค้นหากิจกรรม
+        const activity = await Activity.findByPk(id);
+        if (!activity) {
+            await transaction.rollback();
+            return res.status(404).json({
+                success: false,
+                message: "ไม่พบกิจกรรมที่ต้องการลบ"
             });
+        }
 
-        // ========================================
-        // Delete Activity
-        // ========================================
-
-        await Activity.destroy({
-            where: {
-                id: id
-            },
+        // ลบข้อมูลคำนวณ Carbon ที่เกี่ยวข้องก่อน (ถ้าไม่มี Cascade Delete ใน DB)
+        await CarbonCalculation.destroy({
+            where: { activity_id: id },
             transaction
         });
 
-        // ========================================
-        // Commit Transaction
-        // ========================================
+        // ลบ ตัว Activity
+        await activity.destroy({ transaction });
 
         await transaction.commit();
 
-        // ========================================
-        // Response
-        // ========================================
-
         return res.status(200).json({
-
             success: true,
-
-            message: "ลบ Activity สำเร็จ",
-
-            data: {
-                activity_id: Number(id),
-                deleted_calculations: deletedCalculations
-            }
-
+            message: "ลบกิจกรรมเรียบร้อยแล้ว"
         });
 
     } catch (error) {
-
-        // ========================================
-        // Rollback
-        // ========================================
-
         await transaction.rollback();
-
-        console.error(
-            "Delete activity error:",
-            error
-        );
-
+        console.error("Delete activity error:", error);
         return res.status(500).json({
-
             success: false,
-
-            message: "ไม่สามารถลบ Activity ได้",
-
+            message: "เกิดข้อผิดพลาดในการลบกิจกรรม",
             error: error.message
-
         });
-
     }
-
 };
 
 const updateActivity = async (req, res) => {
