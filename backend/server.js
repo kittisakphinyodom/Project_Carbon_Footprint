@@ -19,6 +19,8 @@ const activityRoutes = require("./routes/activityRoutes");
 const materialRoutes = require("./routes/materialRoutes");
 const activityTypeRoutes = require("./routes/activityTypeRoutes");
 const authRoutes = require("./routes/authRoutes");
+const reportRoutes = require("./routes/reportRoutes");
+
 const app = express();
 
 // Middleware
@@ -74,6 +76,7 @@ app.get("/", (req, res) => {
     });
 });
 
+app.use("/api/reports", reportRoutes);
 
 // Test Database Connection
 const startServer = async () => {

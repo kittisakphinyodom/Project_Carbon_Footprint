@@ -16,8 +16,10 @@ const EmissionFactorSource = require("./EmissionFactorSource");
 const EmissionFactorVersion = require("./EmissionFactorVersion");
 
 const Activity = require("./Activity");
+const ActivityDetail = require("./ActivityDetail");
 const CarbonCalculation = require("./CarbonCalculation");
 
+const sequelize = require("../config/database");
 
 // ========================================
 // User Relationships
@@ -142,6 +144,14 @@ ActivityType.hasMany(Activity, {
     as: "activities"
 });
 
+Activity.belongsTo(User, { 
+    foreignKey: 'user_id', as: 'user'
+ });
+
+User.hasMany(Activity, { 
+    foreignKey: 'user_id', as: 'activities' 
+});
+
 // ========================================
 // Material Relationships
 // ========================================
@@ -160,6 +170,7 @@ EmissionFactor.belongsTo(Material, {
     foreignKey: "material_id",
     as: "material"
 });
+
 
 // Material.belongsTo(ScopeCategory, {
 //     foreignKey: "category_id",
@@ -190,6 +201,52 @@ ScopeCategory.hasMany(Material, {
     foreignKey: "category_id",
     as: "materials"
 });
+ActivityType.hasMany(Material, {
+    foreignKey: "activity_type_id",
+    as: "materials"
+});
+
+Material.belongsTo(ActivityType, {
+    foreignKey: "activity_type_id",
+    as: "activityType"
+});
+
+Activity.hasMany(ActivityDetail, {
+    foreignKey: "activity_id",
+    as: "details"
+});
+
+ActivityDetail.belongsTo(Activity, {
+    foreignKey: "activity_id",
+    as: "activity"
+});
+
+ActivityDetail.belongsTo(Material, {
+    foreignKey: "material_id",
+    as: "material"
+});
+
+ActivityDetail.belongsTo(ActivityType, {
+    foreignKey: "activity_type_id",
+    as: "activityType"
+});
+
+ActivityDetail.belongsTo(Scope, {
+    foreignKey: "scope_id",
+    as: "scope"
+});
+
+ActivityDetail.belongsTo(ScopeCategory, {
+    foreignKey: "category_id",
+    as: "category"
+});
+
+ActivityDetail.belongsTo(Activity, { foreignKey: "activity_id" });
+
+ActivityDetail.belongsTo(Material, { foreignKey: "material_id", as: "Material" });
+Material.hasMany(ActivityDetail, { foreignKey: "material_id" });
+
+
 
 
 
@@ -212,6 +269,9 @@ module.exports = {
     EmissionFactorVersion,
 
     Activity,
+    ActivityDetail,
+    
+    sequelize,
     CarbonCalculation
 };
 

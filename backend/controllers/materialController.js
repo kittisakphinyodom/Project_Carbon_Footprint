@@ -90,7 +90,7 @@ const getMaterials = async (req, res) => {
             ["id", "DESC"]
         ],
 
-        limit: 1
+        
     }
 ],
 

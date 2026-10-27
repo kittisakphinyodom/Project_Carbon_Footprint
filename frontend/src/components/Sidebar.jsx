@@ -1,4 +1,3 @@
-
 import { NavLink } from "react-router-dom";
 
 function Sidebar() {
@@ -14,13 +13,15 @@ function Sidebar() {
       icon: "",
     },
     {
-      name: "Scope3 : Materials List",
+      name: "Materials List",
       path: "/materials",
       icon: "",
     },
-    
-      
-    
+    {
+      name: "Report",
+      path: "/report",
+      icon: "",
+    },
   ];
 
   return (
@@ -67,4 +68,3 @@ function Sidebar() {
 }
 
 export default Sidebar;
-

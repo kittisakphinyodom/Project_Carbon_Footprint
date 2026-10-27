@@ -88,5 +88,18 @@ export const googleLogin = (credential) =>
     });
 
 
+export const getMonthlyReport = async (year, month) => {
+  try {
+    const token = localStorage.getItem("token");
+    const res = await fetch(`/api/reports/monthly?year=${year}&month=${month}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, message: err.message };
+  }
+};
+
+
 export default api;
 

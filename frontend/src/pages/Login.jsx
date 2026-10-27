@@ -133,7 +133,7 @@ export default function Login() {
                     </h1>
 
                     <p className="text-gray-500 mt-2">
-                        ระบบคำนวณ Carbon Footprint โรงแรม
+                        ระบบคำนวณ Carbon Footprint ในครัวของโรงแรม
                     </p>
 
                 </div>
@@ -155,13 +155,13 @@ export default function Login() {
                     <div>
 
                         <label className="block mb-2 font-medium">
-                            Username
+                            Email or Username
                         </label>
 
                         <input
                             type="text"
                             className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-green-500 outline-none"
-                            placeholder="กรอก Username"
+                            placeholder=""
                             value={username}
                             onChange={(e) =>
                                 setUsername(e.target.value)
@@ -180,7 +180,7 @@ export default function Login() {
                         <input
                             type="password"
                             className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-green-500 outline-none"
-                            placeholder="กรอกรหัสผ่าน"
+                            placeholder=""
                             value={password}
                             onChange={(e) =>
                                 setPassword(e.target.value)
@@ -250,7 +250,7 @@ export default function Login() {
 
                 {/* Footer */}
                 <div className="text-center mt-6 text-sm text-gray-500">
-                    Carbon Footprint Management System
+                    Carbon Footprint Calculator System
                 </div>
 
             </div>

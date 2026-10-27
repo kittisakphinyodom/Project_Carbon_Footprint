@@ -75,7 +75,7 @@ export default function Register() {
             setSuccess("สมัครสมาชิกสำเร็จ กำลังไปหน้า Login...");
 
             setTimeout(() => {
-                navigate("/");
+                navigate("/login");
             }, 1500);
 
         } catch (err) {
@@ -243,7 +243,7 @@ export default function Register() {
 
                     <button
                         type="button"
-                        onClick={() => navigate("/")}
+                        onClick={() => navigate("/login")}
                         className="mt-2 text-green-600 font-semibold hover:text-green-700"
                     >
                         เข้าสู่ระบบ
