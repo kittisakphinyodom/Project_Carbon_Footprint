@@ -388,15 +388,15 @@
 
 const { Op } = require("sequelize");
 
-// นำเข้า Models ทั้งหมดอย่างปลอดภัย
+// นำเข้า Models และ Sequelize Instance
 const models = require("../models");
+const sequelize = models.sequelize || require("../models").sequelize;
+
 const Activity = models.Activity || require("../models/Activity");
 const ActivityDetail = models.ActivityDetail || require("../models/ActivityDetail");
 const CarbonCalculation = models.CarbonCalculation || require("../models/CarbonCalculation");
 const Scope = models.Scope || require("../models/Scope");
-const ScopeCategory = models.ScopeCategory || require("../models/ScopeCategory");
 const ActivityType = models.ActivityType || require("../models/ActivityType");
-const Material = models.Material || require("../models/Material");
 
 const calculateCarbonFootprint = ({ quantity, emissionFactor }) => {
     if (quantity === undefined || quantity === null) throw new Error("กรุณาระบุปริมาณกิจกรรม");
@@ -417,7 +417,7 @@ const calculateCarbonFootprint = ({ quantity, emissionFactor }) => {
 };
 
 // ========================================
-// Get Carbon Summary (Synced with activity_types DB)
+// Get Carbon Summary (Dashboard Data)
 // ========================================
 
 const getCarbonSummary = async ({ userId, startDate, endDate }) => {
@@ -435,24 +435,42 @@ const getCarbonSummary = async ({ userId, startDate, endDate }) => {
         activityWhere.activity_date = { [Op.lte]: endDate };
     }
 
-    // 1. ดึง Master Data ตรงจากตาราง activity_types ใน MySQL
+    // 1. ดึง Master Data ด้วย Raw SQL Direct เพื่อป้องกัน Sequelize Plural Mismatch
     let scopesList = [];
     let activityTypesList = [];
-    let materialsList = [];
+    const materialMap = {};
+    const efMap = {};
 
     try { scopesList = await Scope.findAll({ raw: true }); } catch (e) {}
-    try { 
-        activityTypesList = await ActivityType.findAll({ raw: true });
-        console.log("🟢 Loaded activity_types count:", activityTypesList.length);
+    try { activityTypesList = await ActivityType.findAll({ raw: true }); } catch (e) {}
+
+    // ดึงชื่อวัตถุดิบตรงจากตาราง materials
+    try {
+        const [matRows] = await sequelize.query("SELECT id, name, default_unit FROM materials");
+        matRows.forEach(m => {
+            if (m.id !== undefined && m.name) {
+                materialMap[m.id] = m;
+                materialMap[String(m.id)] = m;
+            }
+        });
     } catch (e) {
-        console.error("🔴 Fetch ActivityType Error:", e.message);
+        console.error("🔴 Fetch Materials Raw SQL Error:", e.message);
     }
-    try { materialsList = await Material.findAll({ raw: true }); } catch (e) {}
+
+    // ดึงชื่อจากตาราง emission_factors สำรองไว้ (เผื่อ material_id อ้างอิง ID ของ Factor)
+    try {
+        const [efRows] = await sequelize.query("SELECT id, material_id, name, unit FROM emission_factors");
+        efRows.forEach(ef => {
+            if (ef.id !== undefined && ef.name) {
+                efMap[ef.id] = { name: ef.name, default_unit: ef.unit };
+                efMap[String(ef.id)] = { name: ef.name, default_unit: ef.unit };
+            }
+        });
+    } catch (e) {}
 
     const scopeMap = {};
     scopesList.forEach(s => { scopeMap[s.id || s.scope_id] = s; });
 
-    // 🟢 Map ข้อมูลจากตาราง activity_types (ตาม ID และ category_id)
     const activityTypeMap = {};
     activityTypesList.forEach(at => {
         if (at.id !== undefined) {
@@ -461,15 +479,6 @@ const getCarbonSummary = async ({ userId, startDate, endDate }) => {
         }
         if (at.category_id !== undefined) {
             activityTypeMap[`cat_${at.category_id}`] = at;
-        }
-    });
-
-    const materialMap = {};
-    materialsList.forEach(m => {
-        const key = m.id !== undefined ? m.id : m.material_id;
-        if (key !== undefined && key !== null) {
-            materialMap[key] = m;
-            materialMap[String(key)] = m;
         }
     });
 
@@ -528,11 +537,9 @@ const getCarbonSummary = async ({ userId, startDate, endDate }) => {
         grandTotalCO2e += co2;
 
         const matId = detail.material_id;
-        const matObj = materialMap[matId] || materialMap[String(matId)];
+        const matObj = materialMap[matId] || materialMap[String(matId)] || efMap[matId] || efMap[String(matId)];
 
         const scopeId = detail.scope_id || matObj?.scope_id || matObj?.scopeId || 1;
-        
-        // ดึงประเภทกิจกรรม ID
         const typeId = detail.activity_type_id || detail.category_id || matObj?.category_id || 1;
 
         if (scopeId) scopeAgg[scopeId] = (scopeAgg[scopeId] || 0) + co2;
@@ -550,12 +557,10 @@ const getCarbonSummary = async ({ userId, startDate, endDate }) => {
         }
     });
 
-    // 5.  Format Category Summary ดึงตรงจากคอลัมน์ name ในตาราง activity_types
+    // 5. Format Category Summary
     const formattedCategorySummary = Object.keys(categoryAgg).map(tId => {
         const idNum = Number(tId);
         const atObj = activityTypeMap[idNum] || activityTypeMap[String(idNum)] || activityTypeMap[`cat_${idNum}`];
-        
-        // ดึงชื่อ name จาก MySQL โดยตรง (เช่น "purchased heat", "Purchased Goods and Service")
         const typeName = atObj?.name || atObj?.activity_type_name || `Activity Type #${idNum}`;
 
         return {
@@ -575,10 +580,12 @@ const getCarbonSummary = async ({ userId, startDate, endDate }) => {
         }
     });
 
+    // 🟢 แสดงชื่อจริงจาก materials / emission_factors
     const formattedMaterialSummary = Object.values(topMaterialPerScope).map(item => {
         const idNum = Number(item.material_id);
-        const mObj = materialMap[idNum] || materialMap[String(idNum)];
-        const matName = mObj?.name || mObj?.material_name || (idNum ? `Material #${idNum}` : "ไม่ระบุวัตถุดิบ");
+        const mObj = materialMap[idNum] || materialMap[String(idNum)] || efMap[idNum] || efMap[String(idNum)];
+        
+        const matName = mObj?.name || mObj?.material_name || (idNum ? `วัตถุดิบ #${idNum}` : "ไม่ระบุวัตถุดิบ");
         const matUnit = mObj?.default_unit || mObj?.unit || '';
 
         return {

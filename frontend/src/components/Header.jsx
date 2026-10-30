@@ -31,7 +31,7 @@ const Header = ({ user, onLogout }) => {
       {/* ฝั่งซ้าย: ข้อความ Overview */}
       <div>
         <span className="text-sm text-gray-500 font-normal">
-          Hotel Carbon Footprint Overview
+          {/* Hotel Carbon Footprint Overview */}
         </span>
       </div>
 

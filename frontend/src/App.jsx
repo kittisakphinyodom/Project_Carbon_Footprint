@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -7,6 +7,27 @@ import Activities from "./pages/Activities";
 import Materials from "./pages/Materials";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Report from "./pages/Report";
+
+const ManagerRoute = ({ children }) => {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  
+  const rawRole =
+    typeof user?.role === "string"
+      ? user.role
+      : typeof user?.role === "object"
+      ? user.role?.name
+      : typeof user?.Role === "object"
+      ? user.Role?.name
+      : user?.role_name || "";
+
+  const userRole = String(rawRole || "").toUpperCase();
+
+  if (userRole !== "MANAGER") {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+};
 
 function App() {
   return (
@@ -27,7 +48,14 @@ function App() {
           <Route path="/materials" element={<Materials />} />
         </Route>
 
-        <Route path="/report" element={<Report />} />
+        <Route
+        path="/report"
+        element={
+          <ManagerRoute>
+            <Report />
+          </ManagerRoute>
+        }
+      />
 
       </Routes>
     </BrowserRouter>

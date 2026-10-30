@@ -5,7 +5,7 @@ const reportService = require("../services/reportService");
 console.log("🟢 [INIT] reportRoutes.js loaded successfully!"); // เช็กว่าไฟล์ถูกโหลดตอนเปิดเซิร์ฟเวอร์ไหม
 
 router.get("/monthly", async (req, res) => {
-  console.log("📥 [API HIT] /api/reports/monthly triggered!"); // เช็กว่ามี Request วิ่งเข้ามาไหม
+  // console.log("📥 [API HIT] /api/reports/monthly triggered!"); // เช็กว่ามี Request วิ่งเข้ามาไหม
   try {
     const { year, month, userId } = req.query;
     const data = await reportService.getMonthlyReport({ 

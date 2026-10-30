@@ -31,6 +31,9 @@ const getScopeBadgeStyle = (scopeNum) => {
       return "bg-gray-100 text-gray-700 border-gray-200";
   }
 };
+
+
+
 function Activities() {
   const [activities, setActivities] = useState([]);
   const [materials, setMaterials] = useState([]);
