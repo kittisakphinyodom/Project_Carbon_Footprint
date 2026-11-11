@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <!-- ไล่สีพื้นหลังใบไม้ (เขียวเข้ม) -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+    
+    <!-- ไล่สีมิติใบไม้ด้านใน (เขียวสว่าง) -->
+    <linearGradient id="leafGrad" x1="10%" y1="10%" x2="90%" y2="90%">
+      <stop offset="0%" stop-color="#a7f3d0" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+
+    <!-- เงาเบาๆ ให้ดูมีมิติ -->
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.15" />
+    </filter>
+  </defs>
+
+  <!-- รูปทรงใบไม้หลัก -->
+  <g filter="url(#shadow)">
+    <path d="M 60 105 C 105 105, 105 15, 105 15 C 105 15, 15 15, 15 60 C 15 105, 60 105, 60 105 Z" fill="url(#bgGrad)" />
+    <path d="M 58 98 C 98 98, 98 22, 98 22 C 98 22, 22 22, 22 58 C 22 98, 58 98, 58 98 Z" fill="url(#leafGrad)" />
+  </g>
+
+  <!-- ข้อความ CO2 ตรงกลาง -->
+  <text x="56" y="70" font-family="&#39;Segoe UI&#39;, Roboto, Helvetica, Arial, sans-serif" font-weight="900" font-size="30" fill="#ffffff" text-anchor="middle" letter-spacing="-1">
+    CO<tspan font-size="18" dy="10" font-weight="bold">2</tspan>
+  </text>
+</svg>

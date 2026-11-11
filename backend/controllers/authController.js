@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 const { OAuth2Client } = require("google-auth-library");
 
 const { User, Role } = require("../models");
@@ -280,19 +281,19 @@ const googleLogin = async (req, res) => {
 
         // Create new user if not found
         if (!user) {
-            user = await User.create({
-                username: email,
-                password_hash: await bcrypt.hash(
-                    Math.random().toString(36) + Date.now(),
-                    10
-                ),
-                google_id,
-                first_name: given_name || "",
-                last_name: family_name || "",
-                email,
-                role_id: 2,
-                status: "ACTIVE"
-            });
+  user = await User.create({
+    username: email,
+    password_hash: await bcrypt.hash(
+      crypto.randomBytes(16).toString("hex"), // 🟢 แก้ไขใช้ crypto แทน Math.random()
+      10
+    ),
+    google_id,
+    first_name: given_name || "",
+    last_name: family_name || "",
+    email,
+    role_id: 2,
+    status: "ACTIVE"
+  });
 
             user = await User.findByPk(user.id, {
                 include: [

@@ -156,7 +156,7 @@ export default function Login() {
                         <input
                             type="text"
                             className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-green-500 outline-none"
-                            placeholder="manager@hotel.com"
+                            placeholder="Email or Username"
                             value={username}
                             onChange={(e) =>
                                 setUsername(e.target.value)
@@ -219,7 +219,7 @@ export default function Login() {
                 {/* Divider */}
                 <div className="flex items-center my-6">
                     <div className="flex-1 border-t"></div>
-                    <span className="px-4 text-sm text-gray-400">
+                    <span className="px-4 text-sm text-gray-600">
                         หรือ
                     </span>
                     <div className="flex-1 border-t"></div>

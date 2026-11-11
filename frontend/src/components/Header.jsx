@@ -41,12 +41,12 @@ const Header = ({ user, onLogout }) => {
         {/* กล่องจัดข้อความชิดขวาแบบแนวตั้ง */}
         <div className="flex flex-col items-end">
           {/* 1. Email */}
-          <span className="text-sm font-semibold text-gray-700">
+          <span className="text-sm font-semibold text-gray-1000">
             {displayEmail}
           </span>
 
           {/* 2. Role */}
-          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
+          <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
             {displayRole}
           </span>
 
@@ -59,7 +59,7 @@ const Header = ({ user, onLogout }) => {
           onClick={handleLogoutClick}
           className="bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors shadow-sm cursor-pointer"
         >
-          Logout
+          ออกจากระบบ
         </button>
 
       </div>

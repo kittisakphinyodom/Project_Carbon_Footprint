@@ -1,16 +1,23 @@
-// backend/createManager.js
+require("dotenv").config();
 const bcrypt = require("bcrypt");
 const { User, Role } = require("./models"); 
 const { Op } = require("sequelize");
 
 const createManagerAccount = async () => {
   try {
-    const managerEmail = "manager@hotel.com";
-    const rawPassword = "Manager1234";
+    const managerEmail = process.env.MANAGER_EMAIL;
+    const rawPassword = process.env.MANAGER_PASSWORD;
+
+    // ตรวจสอบว่ามีค่าใน .env หรือไม่ หากไม่มีให้แจ้งเตือนและหยุดทำงาน (ไม่ฝัง String รหัสผ่านในโค้ด)
+    if (!managerEmail || !rawPassword) {
+      console.error("❌ กรุณากำหนด MANAGER_EMAIL และ MANAGER_PASSWORD ในไฟล์ .env ก่อนรันสคริปต์");
+      process.exit(1);
+    }
+
     const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
     // 1. ค้นหา role_id ของ MANAGER จากตาราง Role
-    let roleId = 3; // ค่าเริ่มต้นสำรอง (MANAGER)
+    let roleId = 3;
     if (Role) {
       const managerRole = await Role.findOne({
         where: {
@@ -40,10 +47,9 @@ const createManagerAccount = async () => {
 
     if (created) {
       console.log("\n==========================================");
-      console.log("🎉 สร้างบัญชี Manager ใหม่สำเร็จแล้ว!");
+      console.log(" สร้างบัญชี Manager ใหม่สำเร็จแล้ว!");
       console.log(`Username : manager`);
       console.log(`Email    : ${managerEmail}`);
-      console.log(`Password : ${rawPassword}`);
       console.log(`Role ID  : ${roleId}`);
       console.log("==========================================\n");
     } else {
@@ -57,7 +63,7 @@ const createManagerAccount = async () => {
   } catch (error) {
     console.error("เกิดข้อผิดพลาดในการสร้างบัญชี:", error.message);
   } finally {
-    process.exit();
+    process.exit(0);
   }
 };
 
